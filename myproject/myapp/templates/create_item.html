@@ -1,0 +1,132 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Item Form</title>
+    
+    <link rel="shortcut icon" type="image/ico" href="{% static 'images/favicon.ico' %}" >
+    <link rel="stylesheet" href="{% static 'css/ci.css' %}">
+
+    <script defer>
+        function redirect() {
+            window.location = location.href.replace('/create-item/', '');
+        }
+
+        function hexToRgb(hex) {
+            var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        const tags = [];
+        const selected = [];
+
+        window.onload = function() {
+            // var name, tag, rgb, inputTags, index;
+            var globalRGB;
+
+            {% for document in documents %}
+                tags.push("{{ document.name }}");
+                globalRGB = hexToRgb("{{ document.color }}");
+                document.getElementById("{{ document.name }}").style.borderColor = "rgb(" + (globalRGB.r-50) + ", " + (globalRGB.g-50) + ", " + (globalRGB.b-50) + ")";
+
+                document.getElementById("{{ document.name }}").addEventListener('mouseover', function() {
+                    let name = "{{ document.name }}";
+                    let tag = document.getElementById(name);
+                    let rgb = hexToRgb("{{ document.color }}");
+                    let index = tags.indexOf(name);
+
+                    if (!selected.includes(index)) {
+                        tag.style.backgroundColor = "rgb(" + (rgb.r-30) + ", " + (rgb.g-30) + ", " + (rgb.b-30) + ")";
+                    }
+                });
+
+                document.getElementById("{{ document.name }}").addEventListener('mouseout', function() {
+                    let name = "{{ document.name }}";
+                    let tag = document.getElementById(name);
+                    let rgb = hexToRgb("{{ document.color }}");
+                    let index = tags.indexOf(name);
+
+                    if (!selected.includes(index)) {
+                        tag.style.backgroundColor = "{{ document.color }}";
+                    }
+                });
+
+                document.getElementById("{{ document.name }}").addEventListener('click', function() {
+                    let name = "{{ document.name }}";
+                    let tag = document.getElementById(name);
+                    let rgb = hexToRgb("{{ document.color }}");
+                    let index = tags.indexOf(name);
+
+                    if (selected.includes(index)) {
+                        selected.splice(selected.indexOf(index), 1);
+                        tag.style.borderColor = "rgb(" + (rgb.r-50) + ", " + (rgb.g-50) + ", " + (rgb.b-50) + ")";
+                        tag.style.backgroundColor = "{{ document.color }}";
+                    } else {
+                        selected.push(index);
+                        tag.style.borderColor = "#000";
+                        tag.style.backgroundColor = "rgb(" + (rgb.r-50) + ", " + (rgb.g-50) + ", " + (rgb.b-50) + ")";
+                    }
+
+                    let inputTags = document.getElementById("tags");
+                    inputTags.value = selected.join(",");
+                });
+            {% endfor %}
+        }
+    </script>
+</head>
+<body>
+    <div class="form-container">
+        <p class="title">Create Item</p>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-row">
+                <div class="form-label">Name:</div>
+                <input type="text" class="form-input" name="name" required>
+            </div>
+            <div class="form-row">
+                <div class="form-label">Barcode Number:</div>
+                <input type="text" class="form-input" name="part_number" required>
+            </div>
+            <div class="form-row">
+                <div class="form-label">Description:</div>
+                <textarea type="text" class="form-input" name="description" id="description" required></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-label">Quantity:</div>
+                <input type="number" class="form-input" name="quantity" required type="number">
+            </div>
+            <div class="form-row">
+                <div class="form-label">Location:</div>
+                <input type="text" class="form-input" name="location" required>
+            </div>
+            <span class="form-row form-file-label" style="display:inline-block;">
+                <label class="imageInput" style="padding-right: 0px;">Image:</label>
+                <input type="file" class="form-input" name="image" accept="image/*" style="padding-left: 20px;">
+            </span>
+            <div class="form-label" style="text-align: center;">Tags:</div>
+            <div class="form-row">
+                {% for document in documents %}
+                    <button title="{{ document.description }}" type="button" id="{{ document.name }}" class="tags" style="background-color: {{ document.color }}">
+                        {{ document.name }}</button>
+                {% endfor %}
+            </div>
+            <input id="tags" style="display:none" name="tags" value="">
+            <input type="submit" value="Add" class="button">
+        </form>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-row form-file-label">
+                <label class="or">OR</label>
+                <input type="file" class="form-input" name="file_upload" accept=".csv" required>
+            </div>
+            <input type="submit" value="Upload CSV" class="button"> 
+            <button type="button" onclick="redirect()" class="button">Back</button>
+        </form>
+    </div>
+</body>
+</html>
