@@ -1,0 +1,79 @@
+@font-face {
+    font-family: 'montserrat';
+    src: url(montserrat.ttf);
+}
+
+@font-face {
+    font-family: 'opensans';
+    src: url(opensans.ttf);
+}
+
+@keyframes fade-in {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+html {
+    text-align: center;
+    background-color: #dedede;
+    overflow: hidden;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+button {
+    width: 35%;
+    transition: 0.9s;
+    height: 6vh;
+    font-family: 'opensans';
+}
+
+button:hover {
+    width: 50%;
+    transition: 0.4s;
+}
+
+.title {
+    color: rgb(0, 94, 255);
+    font-family: 'montserrat';
+    font-size: 60px;
+    padding-top: 7vh;
+    opacity: 0;
+    animation: fade-in 0.5s ease-in-out forwards;
+    font-weight: 600;
+}
+
+.subtitle {
+    color: rgb(0, 94, 255);
+    font-family: 'opensans';
+    font-size: 18px;
+    padding-bottom: 12vh;
+    opacity: 0;
+    animation: fade-in 1s ease-in-out forwards;
+}
+
+.content {
+    display: flex;
+    opacity: 0;
+    animation: fade-in 1.5s ease-in-out forwards;
+}
+
+.left {
+    flex: 1;
+    text-align: right;
+}
+
+.right {
+    flex: 1;
+    background-color: lightgray;
+    padding: 20px;
+    font-family: 'opensans';
+}

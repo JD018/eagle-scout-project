@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hello World</title>
+    <link rel="shortcut icon" type="image/ico" href="{% static 'images/favicon.ico' %}" >
+</head>
+<body>
+    <h1>Hello World!</h1>
+    <form method="post">
+        {% csrf_token %}
+        <input type="submit" value="Run Script">
+    </form>
+
+    <h1>Documents:</h1>
+    <ul>
+        {% for document in documents %}
+            <li><h3>{{ document.name }}:</h3>
+            <span>#{{ document.part_number }}, </span>
+            <span>{{ document.description }}, </span>
+            <span>{{ document.quantity }} Parts, </span>
+            <span>At {{ document.location }}</span>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

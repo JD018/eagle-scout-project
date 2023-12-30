@@ -1,0 +1,28 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Inventory Webpage</title>
+        <link rel="shortcut icon" type="image/ico" href="{% static 'images/favicon.ico' %}" >
+        <link rel="stylesheet" href="{% static 'css/style.css' %}">
+        <script src="{% static 'javascript/script.js' %}"></script>
+    </head>
+
+    <body>
+        <p class="title">Welcome</p>
+        <p class="subtitle">imec Superconducting Research Team</p>
+
+        <div class="content">
+            <div class="left">
+                <button onmouseover="call(1)">Information</button><br>
+                <button onmouseover="call(2)" onclick='change("inventory")'>Inventory</button><br>
+                <button onmouseover="call(3)">Other 1</button><br>
+                <button onmouseover="call(4)">Other 2</button><br>
+            </div>
+
+            <div class="right" id="textArea">
+                Hover over a bar to get started.
+            </div>
+        </div>
+    </body>
+</html>

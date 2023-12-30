@@ -1,0 +1,581 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Inventory Database</title>
+        <link rel="shortcut icon" type="image/ico" href="{% static 'images/favicon.ico' %}" >
+        <link rel="stylesheet" href="{% static 'css/inv.css' %}">
+    </head>
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    
+    <script defer>
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+
+            function setCookie(name, value, daysToExpire) {
+                const date = new Date();
+                date.setTime(date.getTime() + (daysToExpire * 24 * 60 * 60 * 1000));
+                const expires = "expires=" + date.toUTCString();
+                document.cookie = name + "=" + value + ";" + expires + ";path=/";
+            }
+
+            function partition(arr, indices, low, high) {
+                var temp;
+                var temp2;
+                var pivot = arr[high];
+
+                var i = (low - 1);
+                for (var j = low; j <= high - 1; j++) {
+                    if (arr[j] <= pivot) {
+                        i++;
+
+                        temp = arr[i];
+                        arr[i] = arr[j];
+                        arr[j] = temp;
+
+                        temp2 = indices[i];
+                        indices[i] = indices[j];
+                        indices[j] = temp2;
+                    }
+                }
+
+                temp = arr[i + 1];
+                arr[i + 1] = arr[high];
+                arr[high] = temp;
+
+                temp2 = indices[i + 1];
+                indices[i + 1] = indices[high];
+                indices[high] = temp2;
+
+                return i + 1;
+            }
+
+            function quickSort(arr, indices, l, h) {
+                var stack = new Array(h - l + 1);
+                stack.fill(0);
+
+                var top = -1;
+
+                stack[++top] = l;
+                stack[++top] = h;
+
+                while (top >= 0) {
+                    h = stack[top--];
+                    l = stack[top--];
+
+                    var p = partition(arr, indices, l, h);
+
+                    if (p - 1 > l) {
+                        stack[++top] = l;
+                        stack[++top] = p - 1;
+                    }
+
+                    if (p + 1 < h) {
+                        stack[++top] = p + 1;
+                        stack[++top] = h;
+                    }
+                }
+            }
+
+            function deleteEverything() {
+                const deleteAll = document.querySelector("#deleteEverything");
+                deleteAll.style.display = "revert";
+            }
+
+            function reallyDelete() {
+                fetch('/inventory/', {
+                    method: 'POST',
+                    headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                    body: JSON.stringify({
+                        "trulyDelete": "yes"
+                    }),
+                })
+            }
+
+            function hexToRgb(hex) {
+                var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? {
+                    r: parseInt(result[1], 16),
+                    g: parseInt(result[2], 16),
+                    b: parseInt(result[3], 16)
+                } : null;
+            }
+
+
+            const table = document.getElementsByClassName("filter");
+            const ctags = [];
+            const selected = [];
+
+            window.onload = function () {
+                const downloadBtn = document.getElementById('downloadBtn');
+                downloadBtn.addEventListener('click', generateCSV);
+
+                for (let row of table) {
+                    row.onmouseover = function() {
+                        row.style.backgroundColor = "#aaa";
+                    }
+
+                    row.onmouseout = function() {
+                        let counter2 = 0;
+                        for (let r of table) {
+                            if (r.style.display != "none") {
+                                counter2 += 1;
+                            }
+                            if (r != row) {
+                                continue;
+                            } 
+                            row.style.backgroundColor = counter2 % 2 === 0 ? '#ddd' : 'revert';
+                            break;
+                        }
+                    }
+                }
+
+
+                var globalRGB;
+
+                {% for tag in tags %}
+                    ctags.push("{{ tag.name }}");
+                    globalRGB = hexToRgb("{{ tag.color }}");
+                    document.getElementById("tag_{{ tag.name }}").style.borderColor = "rgb(" + (globalRGB.r-50) + ", " + (globalRGB.g-50) + ", " + (globalRGB.b-50) + ")";
+
+                    document.getElementById("tag_{{ tag.name }}").addEventListener('mouseover', function() {
+                        let name = "{{ tag.name }}";
+                        let tag = document.getElementById("tag_" + name);
+                        let rgb = hexToRgb("{{ tag.color }}");
+                        let index = ctags.indexOf(name);
+
+                        if (!selected.includes(index)) {
+                            tag.style.backgroundColor = "rgb(" + (rgb.r-30) + ", " + (rgb.g-30) + ", " + (rgb.b-30) + ")";
+                        }
+                    });
+
+                    document.getElementById("tag_{{ tag.name }}").addEventListener('mouseout', function() {
+                        let name = "{{ tag.name }}";
+                        let tag = document.getElementById("tag_" + name);
+                        let rgb = hexToRgb("{{ tag.color }}");
+                        let index = ctags.indexOf(name);
+
+                        if (!selected.includes(index)) {
+                            tag.style.backgroundColor = "{{ tag.color }}";
+                        }
+                    });
+
+                    document.getElementById("tag_{{ tag.name }}").addEventListener('click', function() {
+                        let name = "{{ tag.name }}";
+                        let tag = document.getElementById("tag_" + name);
+                        let rgb = hexToRgb("{{ tag.color }}");
+                        let index = ctags.indexOf(name);
+
+                        if (selected.includes(index)) {
+                            selected.splice(selected.indexOf(index), 1);
+                            tag.style.borderColor = "rgb(" + (rgb.r-50) + ", " + (rgb.g-50) + ", " + (rgb.b-50) + ")";
+                            tag.style.backgroundColor = "{{ tag.color }}";
+                        } else {
+                            selected.push(index);
+                            tag.style.borderColor = "#000";
+                            tag.style.backgroundColor = "rgb(" + (rgb.r-50) + ", " + (rgb.g-50) + ", " + (rgb.b-50) + ")";
+                        }
+
+                        let counter = 0;
+
+                        for (let row of table) {
+                            row.style.backgroundColor = "revert";
+                            const elTags = row.getElementsByClassName("tags");
+                            const newTags = [];
+
+                            for (let i in elTags) {
+                                if (elTags[i].textContent) {
+                                    newTags.push(String(elTags[i].textContent).trim());
+                                }
+                            }
+
+                            let hasAllTags = true;
+                            for (let item in selected) {
+                                if (!newTags.includes(ctags[parseInt(selected[item], 10)])) {
+                                    hasAllTags = false;
+                                    break;
+                                }
+                            }
+
+                            if (!hasAllTags && selected.length > 0) {
+                                row.style.display = "none";
+                            } else {
+                                counter += 1;
+
+                                row.style.display = "revert";
+
+                                if (counter % 2 == 0) {
+                                    row.style.backgroundColor = "#ddd";
+                                }
+                            }
+                        }
+                    });
+                {% endfor %}
+
+                function highlightMatches(searchString) {
+                    if (searchString == "") {
+                        return;
+                    }
+                    const elementsToHighlight = document.querySelectorAll('.change');
+                    const regex = new RegExp(searchString, 'gi');
+
+                    for (let element of elementsToHighlight) {
+                        if (element.parentElement.style.display == "none") {
+                            continue;
+                        }
+                        const originalContent = element.innerHTML;
+                        const highlightedContent = originalContent.replace(regex, match => `<span class="highlight">${match}</span>`);
+                        element.innerHTML = highlightedContent;
+                    }
+                }
+
+                function removeHighlights() {
+                    const highlights = document.querySelectorAll('.highlight');
+                    highlights.forEach(highlight => {
+                        const parent = highlight.parentNode;
+                        parent.replaceChild(document.createTextNode(highlight.textContent), highlight);
+                    });
+                }
+
+                function removeSlideIns() {
+                    const slideins = document.querySelectorAll('.slide-in');
+                    slideins.forEach(slidein => {
+                        slidein.classList.remove('slide-in');
+                    });
+                }
+
+                const input = document.getElementById("search");
+                input.addEventListener('input', function (e) {
+                    removeHighlights();
+                    removeSlideIns();
+
+                    let text = input.value.trim().toLowerCase();
+                    let counter = 0;
+
+                    for (let row of table) {
+                        let total = "";
+
+                        for (let node of row.getElementsByClassName("change")) {
+                            if (node === undefined) {
+                                continue;
+                            }
+
+                            let currentText = node.textContent.trim().toLowerCase();
+                            total += currentText;
+                        }
+
+                        row.style.backgroundColor = "revert";
+
+                        if (total.trim().indexOf(text) == -1 && text != "") {
+                            row.style.display = "none";
+                        } else {
+                            counter += 1;
+
+                            row.style.display = "revert";
+
+                            if (counter % 2 == 0) {
+                                row.style.backgroundColor = "#ddd";
+                            }
+                        }
+                    }
+                    highlightMatches(input.value.trim());
+                });
+            };
+
+            function ascending(name) {
+                let table = document.getElementsByClassName("filter");
+                let column = [].slice.call(table).map(function(tr) { return tr.getElementsByTagName('td')[name+1].innerText.toLowerCase(); });
+
+                if (name == 3) {
+                    for (let i = 0; i < column.length; i++) {
+                        column[i] = parseInt(String(column[i]), 10);
+                    }
+                }
+
+                let indices = [];
+                for (let i = 0; i < column.length; i++) {
+                   indices.push(i);
+                }
+
+                quickSort(column, indices, 0, column.length - 1);
+                const newTable = Object.assign({}, table);
+
+                let parent = table[0].parentNode;
+                for (let i = 0; i < indices.length; i++) {
+                    parent.appendChild(newTable[indices[i]]);
+                }
+
+                let counter2 = 0;
+                for (let row of table) {
+                    if (row.style.display === 'none') {
+                        continue;
+                    }
+
+                    counter2 += 1;
+                    row.style.backgroundColor = counter2 % 2 === 0 ? '#ddd' : 'revert';
+                }
+            }
+
+            function descending(name) {
+                let table = document.getElementsByClassName("filter");
+                let column = [].slice.call(table).map(function(tr) { return tr.getElementsByTagName('td')[name+1].innerText.toLowerCase(); });
+
+                if (name == 3) {
+                    for (let i = 0; i < column.length; i++) {
+                        column[i] = parseInt(String(column[i]), 10);
+                    }
+                }
+
+                let indices = [];
+                for (let i = 0; i < column.length; i++) {
+                   indices.push(i);
+                }
+
+                quickSort(column, indices, 0, column.length - 1);
+                const newTable = Object.assign({}, table);
+
+                let parent = table[0].parentNode;
+                for (let i = indices.length-1; i >= 0; i--) {
+                    parent.appendChild(newTable[indices[i]]);
+                }
+
+                let counter2 = 0;
+                for (let row of table) {
+                    if (row.style.display === 'none') {
+                        continue;
+                    }
+
+                    counter2 += 1;
+                    row.style.backgroundColor = counter2 % 2 === 0 ? '#ddd' : 'revert';
+                }
+            }
+
+            function getValueFromEntry(entry, name) {
+                const substr = entry.substring(entry.indexOf(name)+name.length+4);
+                return substr.substring(0, substr.indexOf(",")-1);
+            }
+            
+            function editEntry(entry) {
+                let substr = entry.substring(entry.indexOf('_id')+6);
+                substr = substr.substring(0, substr.indexOf(","));
+                const dataToSend = {
+                    edit: substr
+                };
+
+                fetch('/inventory/', {
+                    method: 'POST',
+                    headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                    body: JSON.stringify(dataToSend),
+                })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.href = '/inventory/edit-item/?id=' + substr.substring(10,substr.length-2);
+                    } else {
+                        console.error('Error: Something went wrong.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error: ', error);
+                });
+            }
+
+            function deleteEntry(entry) {
+                const substr = entry.substring(entry.indexOf('_id')+6)
+                const dataToSend = {
+                    remove: substr.substring(0, substr.indexOf(","))
+                };
+
+                fetch('/inventory/', {
+                    method: 'POST',
+                    headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                    body: JSON.stringify(dataToSend),
+                })
+                .then(function() {
+                    const table = document.getElementsByClassName("filter");
+                    for (let node in table) {
+                        if (!table[node].childNodes) {
+                            continue;
+                        }
+
+                        const string = table[node].childNodes[17].textContent;
+                        if (string == entry) {
+                            table[node].remove();
+                            break;
+                        }
+                    }
+                    let counter2 = 0;
+                    for (let row of table) {
+                        if (row.style.display === 'none') {
+                            continue;
+                        }
+
+                        counter2 += 1;
+                        row.style.backgroundColor = counter2 % 2 === 0 ? '#ddd' : 'revert';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+
+            function generateCSV() {
+                const csvData = [["name", "part_number", "description", "quantity", "location"]];
+                const hiddenData = document.getElementsByClassName("change");
+                for (let i = 0; i < hiddenData.length; i += 5) {
+                    const values = [];
+                    for (let j = 0; j < 5; j++) {
+                        values.push('"' + hiddenData[i+j].textContent + '"');
+                    }
+                    csvData.push(values);
+                }
+
+                const csvContent = csvData.map(row => row.join(',')).join('\n');
+
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+
+                const url = URL.createObjectURL(blob);
+
+                const downloadLink = document.createElement('a');
+                downloadLink.href = url;
+                downloadLink.download = 'inventory.csv';
+
+                downloadLink.style.display = 'none';
+                document.body.appendChild(downloadLink);
+
+                downloadLink.click();
+
+                URL.revokeObjectURL(url);
+            }
+
+    </script>
+
+    <body>
+        <dialog open id="deleteEverything" style="display:none;">
+            <p>Really Delete Everything?</p>
+            <button style="background-color:green;" onclick="reallyDelete()">YES</button><button style="background-color:red;" onclick="document.querySelector('#deleteEverything').style.display='none';">NO</button>
+          </dialog>
+
+        <span class="title"><img src="{% static 'images/imec.png' %}" onclick="location.href = location.href.replace('/inventory/', '')" style="max-height:50px"></span>
+        <span class="moveOver">
+            <button title="Download Table" class="editButtons menu"  id="downloadBtn">
+                <img style="transform:translate(0px,1px);" src="{% static 'images/download.png' %}" width="20px" height="20px">
+            </button>
+            <button title="Create Item" class="editButtons menu" onclick="location.href = 'create-item'" class="button">
+                <img style="transform:translate(0px,2px);" src="{% static 'images/create.png' %}" width="20px" height="20px">
+            </button>
+            <button title="Edit Tags" class="editButtons menu" onclick="location.href = 'edit-tags'">
+                <img style="transform:translate(0,2px);" src="{% static 'images/tag.png' %}" width="20px" height="20px">
+            </button>
+            <button title="Refresh Page" class="editButtons menu" onclick="location.href=''" class="button">
+                <img style="transform:translate(-1px,1px);" src="{% static 'images/refresh.png' %}" width="20px" height="20px">
+            </button>
+            <button title="Go Back" class="editButtons menu" onclick="window.location = location.href.replace('/inventory/', '');" class="button">
+                <img style="transform:translate(-1px,1px);" src="{% static 'images/back.png' %}" width="20px" height="20px">
+            </button>
+            <input style="transform:translate(0, -3px);" id="search" placeholder="Search">
+        </span>
+        <br><br><br>
+
+        <div style="text-align: left;">
+            <h2 style="padding-left: 10px">Filter</h2>
+            {% for tag in tags %}
+                <button title="{{ tag.description }}" type="button" class="tags" id="tag_{{ tag.name }}" style="background-color: {{ tag.color }}">{{ tag.name }}</button>
+            {% endfor %}
+        </div>
+        <br>
+
+        <table id="table">
+            <tr>
+                <th style="width:100px">Tags</th>
+
+                <th>Name
+                    <div class="buttonGroup">
+                        <div class="up-arrow" onclick="ascending(0)"></div>
+                        <div class="down-arrow" onclick="descending(0)"></div>
+                    </div>
+                </th>
+                <th>Part Number
+                    <div class="buttonGroup">
+                        <div class="up-arrow" onclick="ascending(1)"></div>
+                        <div class="down-arrow" onclick="descending(1)"></div>
+                    </div>
+                </th>
+                <th>Description
+                    <div class="buttonGroup">
+                        <div class="up-arrow" onclick="ascending(2)"></div>
+                        <div class="down-arrow" onclick="descending(2)"></div>
+                    </div>
+                </th>
+                <th>Quantity
+                    <div class="buttonGroup">
+                        <div class="up-arrow" onclick="ascending(3)"></div>
+                        <div class="down-arrow" onclick="descending(3)"></div>
+                    </div>
+                </th>
+                <th>Location
+                    <div class="buttonGroup">
+                        <div class="up-arrow" onclick="ascending(4)"></div>
+                        <div class="down-arrow" onclick="descending(4)"></div>
+                    </div>
+                </th>
+                <th style="width:120px;">Image</th>
+                <th style="width:80px;"></th>
+                <th style="display:none;"></th>
+            </tr>
+            
+            {% for document in documents %}
+                <tr class="filter">
+                    <td class="small">
+                        {% if document.tags %}
+                            {% for tag in document.tags %}
+                                <button title="{{ tag.description }}" type="button" class="tags" style="background-color: {{ tag.color }}">{{ tag.name }}</button>
+                            {% endfor %}
+                        {% endif %}
+                    </td>
+                    <td class="medium change">{{ document.name }}</td>
+                    <td class="medium change">{{ document.part_number }}</td>
+                    <td class="small change">{{ document.description }}</td>
+                    <td class="medium change">{{ document.quantity }}</td>
+                    <td class="small change">{{ document.location }}</td>
+                    <td class="small">
+                        {% if document.image %}
+                            <img src="data:image/png;base64,{{ document.image }}" style="max-width:100px;max-height:100px;">
+                        {% endif %}
+                    </td>
+                    <td><span>
+                        <button class="editButtons" onclick="editEntry('{{ document|escapejs }}')">
+                            <img style="transform:translate(0,2px);" src="{% static 'images/edit.png' %}" width="20px" height="20px">
+                        </button>
+                        <button class="editButtons" onclick="deleteEntry('{{ document|escapejs }}')">
+                            <img style="transform:translate(-1px,1px);" src="{% static 'images/trash.png' %}" width="20px" height="20px">
+                        </button>
+                    </td></span>
+                    <td style="display:none;" class="hiddenData">{{ document }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+
+    </body>
+</html>
