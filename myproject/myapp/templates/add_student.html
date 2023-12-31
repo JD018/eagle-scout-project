@@ -1,0 +1,46 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Student Form</title>
+    
+    <link rel="shortcut icon" type="image/ico" href="{% static 'images/favicon.ico' %}" >
+    <link rel="stylesheet" href="{% static 'css/ci.css' %}">
+
+    <script defer>
+        function redirect() {
+            window.location = location.href.replace('/add-student/', '');
+        }
+    </script>
+</head>
+<body>
+    <div class="form-container">
+        <p class="title">Add Student</p>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-row">
+                <div class="form-label">ID:</div>
+                <input type="text" class="form-input" name="id" required>
+            </div>
+            <div class="form-row">
+                <div class="form-label">Name:</div>
+                <input type="text" class="form-input" name="name" required>
+            </div>
+            <div class="form-row">
+                <div class="form-label">In Time:</div>
+                <textarea type="text" class="form-input" name="in_time" id="description" required></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-label">Certification Level:</div>
+                <input type="number" class="form-input" name="cert_level" required type="number">
+            </div>
+            <div class="form-row">
+                <div class="form-label">Reason:</div>
+                <input type="text" class="form-input" name="reason" required>
+            </div>
+            <input type="submit" value="Log In" class="button">
+        </form>
+            <button type="button" onclick="redirect()" class="button">Back</button>
+    </div>
+</body>
+</html>

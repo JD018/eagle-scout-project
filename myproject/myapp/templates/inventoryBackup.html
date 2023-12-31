@@ -1,0 +1,39 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Inventory Database</title>
+        <link rel="shortcut icon" type="image/ico" href="{% static 'images/favicon.ico' %}" >
+        <link rel="stylesheet" href="{% static 'css/inv.css' %}">
+    </head>
+
+    <body>
+        <span class="title">Inventory</span>
+        <button onclick="location.href = 'create-item';">+ Create Item</button><button onclick="location.href=''">Refresh</button><button onclick="window.location = location.href.replace('/inventory/', '');">Go Back</button><input placeholder="Search">
+        <br><br><br>
+
+        <div class="flexContainer">
+            <span class="flexElem">Name</span>
+            <span class="flexElem">Part Number</span>
+            <span class="flexElem">Description</span>
+            <span class="flexElem">Quantity</span>
+            <span class="flexElem">Location</span>
+        </div>
+
+        <div id="items">
+            {% for document in documents %}
+            <div class="flexContainerItems">
+                <span class="flexElem">{{ document.name }}</span>
+                <span class="flexElem">{{ document.part_number }}</span>
+                <span class="flexElem">{{ document.description }}</span>
+                <span class="flexElem">{{ document.quantity }}</span>
+                <span class="flexElem">{{ document.location }}</span>
+            </div>
+            {% endfor %}
+        </div>
+
+    </body>
+</html>
+
+<!--Notes: have pictures of each item-->
+<!--csv upload (use POST)-->

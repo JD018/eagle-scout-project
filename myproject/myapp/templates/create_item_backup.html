@@ -1,0 +1,31 @@
+<!--{% load static %}-->
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Create Item</title>
+        <link rel="shortcut icon" type="image/ico" href="{% static 'images/favicon.ico' %}" >
+    </head>
+
+    <body>
+        <h1>Create Item:</h1>
+        <button onclick="window.location = location.href.replace('/create-item/', '')">Go Back</button>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input name="file_upload" type="file"><br>
+            <input type="submit">
+
+        </form>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <span>Name: </span><input name="name" required maxlength="20"><br>
+            <span>Part Number: </span><input name="part_number" required maxlength="20"><br>
+            <span>Description: </span><input name="description" required maxlength="75"><br>
+            <span>Quantity: </span><input name="quantity" required maxlength="5" type="number"><br>
+            <span>Location: </span><input name="location" required maxlength="75"><br>
+            <span>Image: </span><input name="image" type="file"><br>
+            <input type="submit" value="Add">
+        </form>
+    </body>
+</html>

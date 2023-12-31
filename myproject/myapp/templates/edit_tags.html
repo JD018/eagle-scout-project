@@ -1,0 +1,92 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Edit Tags Form</title>
+        
+        <link rel="shortcut icon" type="image/ico" href="{% static 'images/favicon.ico' %}" >
+        <link rel="stylesheet" href="{% static 'css/ci.css' %}">
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+        <script src="{% static 'javascript/colorPicker.js' %}"></script>
+
+        <script>
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+
+            function redirect() {
+                window.location = location.href.replace('/edit-tags/', '');
+            }
+            
+
+            function deleteTag(name) {
+                name = name.textContent.trim();
+                const deletethis = confirm('Are you sure you want to delete the "' + name + '" tag?');
+                if (deletethis) {
+                    fetch('/inventory/edit-tags/', {
+                        method: 'POST',
+                        headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        },
+                        body: JSON.stringify({
+                            "delete": name
+                        }),
+                    }).then(function() {
+                        window.location.reload();
+                    })
+                }
+            }
+
+        </script>
+    </head>
+    <body>
+        <div class="form-container">
+            <p class="title">Edit Tags</p>
+            <form method="post" enctype="multipart/form-data" onsubmit="setTimeout(function () { window.location.reload(); }, 1000)">
+                {% csrf_token %}
+                <div class="form-row">
+                    <div class="form-label">Name:</div>
+                    <input style="width: 50px" type="text" class="form-input" name="name" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-label">Description:</div>
+                    <textarea style="max-width: 250px; width:250px"  type="text" class="form-input" name="description" id="description" required></textarea>
+                </div>
+
+                <div id="color-picker"></div>
+
+                <div class="form-row">
+                    <div class="form-label">Color:</div>
+                    <input min="0" max="255" type="number" class="form-input color" name="rgbR" id="rgbR" value="255" required>
+                    <input min="0" max="255" type="number" class="form-input color" name="rgbG" id="rgbG" value="0" required>
+                    <input min="0" max="255" type="number" class="form-input color" name="rgbB" id="rgbB" value="0" required>
+                    <div style="width:20px;height:20px;background-color:red;" id="swatch"></div>
+                </div>
+                <br>
+                
+                <input type="submit" value="Add" class="button">
+                <button type="button" onclick="redirect()" class="button">Back</button>
+            </form>
+
+            <br><br>
+            <div class="form-label" style="text-align: center !important;">Delete Tags:</div><br>
+            {% for tag in tags %}
+                <button onclick="deleteTag( {{ tag.name }} )" title="{{ tag.description }}" type="button" id="{{ tag.name }}" class="tags" style="background-color: {{ tag.color }}">{{ tag.name }}</button>
+            {% endfor %}
+            <br>
+        </div>
+    </body>
+</html>
